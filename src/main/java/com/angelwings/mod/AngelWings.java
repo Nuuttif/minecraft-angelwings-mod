@@ -4,14 +4,22 @@ import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
 
+import net.minecraft.Util;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -31,6 +39,9 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
+import java.util.EnumMap;
+import java.util.List;
+
 // The value here should match an entry in the META-INF/neoforge.mods.toml file
 @Mod(AngelWings.MODID)
 public class AngelWings {
@@ -44,6 +55,8 @@ public class AngelWings {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
     // Create a Deferred Register to hold CreativeModeTabs which will all be registered under the "angelwings" namespace
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
+    // Create a Deferred Register to hold ArmorMaterials which will all be registered under the "angelwings" namespace
+    public static final DeferredRegister<ArmorMaterial> ARMOR_MATERIALS = DeferredRegister.create(Registries.ARMOR_MATERIAL, MODID);
 
     // Creates a new Block with the id "angelwings:example_block", combining the namespace and path
     public static final DeferredBlock<Block> EXAMPLE_BLOCK = BLOCKS.registerSimpleBlock("example_block", BlockBehaviour.Properties.of().mapColor(MapColor.STONE));
@@ -54,13 +67,36 @@ public class AngelWings {
     public static final DeferredItem<Item> EXAMPLE_ITEM = ITEMS.registerSimpleItem("example_item", new Item.Properties().food(new FoodProperties.Builder()
             .alwaysEdible().nutrition(1).saturationModifier(2f).build()));
 
+    // The material the Angel Wings chestplate is made of; kept as a plain constant so it can be referenced during registration
+    private static final ArmorMaterial ANGEL_WINGS_MATERIAL_VALUE = new ArmorMaterial(
+            Util.make(new EnumMap<>(ArmorItem.Type.class), map -> map.put(ArmorItem.Type.CHESTPLATE, 8)),
+            15,
+            SoundEvents.ARMOR_EQUIP_ELYTRA,
+            () -> Ingredient.of(Items.NETHERITE_INGOT),
+            List.of(new ArmorMaterial.Layer(ResourceLocation.fromNamespaceAndPath(MODID, "angel_wings"))),
+            3.0F,
+            0.1F);
+
+    // Creates a new ArmorMaterial with the id "angelwings:angel_wings"
+    public static final DeferredHolder<ArmorMaterial, ArmorMaterial> ANGEL_WINGS_MATERIAL = ARMOR_MATERIALS.register("angel_wings", () -> ANGEL_WINGS_MATERIAL_VALUE);
+
+    // Creates the Angel Wings chestplate with the id "angelwings:angel_wings", granting creative flight while worn
+    public static final DeferredItem<AngelWingsItem> ANGEL_WINGS = ITEMS.registerItem("angel_wings",
+            properties -> new AngelWingsItem(ANGEL_WINGS_MATERIAL, properties),
+            new Item.Properties()
+                    .durability(ArmorItem.Type.CHESTPLATE.getDurability(37))
+                    .fireResistant()
+                    .rarity(Rarity.EPIC)
+                    .attributes(AngelWingsItem.createAttributes(ANGEL_WINGS_MATERIAL_VALUE)));
+
     // Creates a creative tab with the id "angelwings:example_tab" for the example item, that is placed after the combat tab
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> EXAMPLE_TAB = CREATIVE_MODE_TABS.register("example_tab", () -> CreativeModeTab.builder()
             .title(Component.translatable("itemGroup.angelwings")) //The language key for the title of your CreativeModeTab
             .withTabsBefore(CreativeModeTabs.COMBAT)
-            .icon(() -> EXAMPLE_ITEM.get().getDefaultInstance())
+            .icon(() -> ANGEL_WINGS.get().getDefaultInstance())
             .displayItems((parameters, output) -> {
                 output.accept(EXAMPLE_ITEM.get());// Add the example item to the tab. For your own tabs, this method is preferred over the event
+                output.accept(ANGEL_WINGS.get());
             }).build());
 
     // The constructor for the mod class is the first code that is run when your mod is loaded.
@@ -75,6 +111,8 @@ public class AngelWings {
         ITEMS.register(modEventBus);
         // Register the Deferred Register to the mod event bus so tabs get registered
         CREATIVE_MODE_TABS.register(modEventBus);
+        // Register the Deferred Register to the mod event bus so armor materials get registered
+        ARMOR_MATERIALS.register(modEventBus);
 
         // Register ourselves for server and other game events we are interested in.
         // Note that this is necessary if and only if we want *this* class (AngelWings) to respond directly to events.
@@ -105,6 +143,11 @@ public class AngelWings {
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.BUILDING_BLOCKS) {
             event.accept(EXAMPLE_BLOCK_ITEM);
+        }
+
+        // Add the Angel Wings to the combat tab
+        if (event.getTabKey() == CreativeModeTabs.COMBAT) {
+            event.accept(ANGEL_WINGS);
         }
     }
 

@@ -1,14 +1,3 @@
 {
-  "itemGroup.angelwings": "Example Mod Tab",
-  "block.angelwings.example_block": "Example Block",
-  "item.angelwings.example_item": "Example Item",
-  "item.angelwings.angel_wings": "Angel Wings",
-
-  "angelwings.configuration.title": "Angel Wings Configs",
-  "angelwings.configuration.section.angelwings.common.toml": "Angel Wings Configs",
-  "angelwings.configuration.section.angelwings.common.toml.title": "Angel Wings Configs",
-  "angelwings.configuration.items": "Item List",
-  "angelwings.configuration.logDirtBlock": "Log Dirt Block",
-  "angelwings.configuration.magicNumberIntroduction": "Magic Number Text",
-  "angelwings.configuration.magicNumber": "Magic Number"
+  "item.angelwings.angel_wings": "Angel Wings"
 }
